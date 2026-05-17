@@ -10,5 +10,9 @@ htmlcov/
 context.json
 violations.json
 network_state.md
+network_state.json
+discovery_logs/
 *.log
 .DS_Store
+credentials.json
+.env
