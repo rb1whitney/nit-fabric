@@ -69,8 +69,6 @@ def main():
         
         elif args.command == "remediate":
             cmd = [sys.executable, str(base_dir / "remediator.py"), "--provider", args.provider]
-            if args.validate:
-                cmd.append("--validate")
             if args.explain:
                 cmd.append("--explain")
             subprocess.run(cmd, check=True)
