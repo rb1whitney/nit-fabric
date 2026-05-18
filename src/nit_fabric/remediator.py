@@ -52,6 +52,14 @@ class PolicyRemediator:
             logger.error("Malformed scenario detected: Missing 'id' or 'violation_type'")
             return "ERR_MALFORMED_INPUT", ""
 
+        # OPA/Security Policy Validation Gate
+        from nit_fabric.validator import ValidatorGate
+        gate = ValidatorGate()
+        violations = gate.evaluate_security(scenario)
+        if violations:
+            logger.error(f"[SECURITY BLOCK] Proposed patch violates security policy: {violations}")
+            return f"ERR_SECURITY_VIOLATION: {violations}", ""
+
         logger.info(f"Analyzing failure scenario: {report_id}")
         template_name = self.template_map.get(report_id)
         
@@ -85,9 +93,13 @@ class PolicyRemediator:
             return f"ERR_TEMPLATE_FAILURE: {e}", ""
 
     def validate_patch(self, patch: str) -> None:
-        logger.info("Validating patch safety (simulation)...")
-        if "delete" in patch.lower() or "-" in patch:
-            logger.warning("[SAFETY] Potentially destructive action detected in patch.")
+        logger.info("Validating patch safety...")
+        from nit_fabric.validator import ValidatorGate
+        gate = ValidatorGate()
+        success, errors = gate.validate_syntax(patch)
+        if not success:
+            logger.error(f"[SYNTAX BLOCK] Proposed HCL is invalid: {errors}")
+            raise ValueError(f"Syntax Validation Error: {errors}")
         logger.info("Patch validation: SUCCESS")
 
 def main() -> None:
