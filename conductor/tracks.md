@@ -9,19 +9,19 @@
 ### Track: usability-hardening (Phase 0)
 - **Owner**: @swarm-scout / @swarm-engineer
 - **Goal**: Eliminate 'Ghost Dependencies' and 'Silent Discovery Failures' via pre-flight checks and explicit error bubbling.
-- **Status**: [INITIALIZING] | [**conductor/tracks/usability-hardening/spec.md**](file://./tracks/usability-hardening/spec.md)
+- **Status**: [COMPLETED] | [**conductor/tracks/usability-hardening/spec.md**](file://./tracks/usability-hardening/spec.md)
 - **Priority**: CRITICAL
 
 ### Track: aws-reengineering (Phase 1)
 - **Owner**: @specialist-aws
 - **Goal**: Implement tag-driven discovery and high-resolution topology (TGW, DX, PrivateLink).
-- **Status**: [PLANNING] | [**conductor/tracks/aws-reengineering/spec.md**](file://./tracks/aws-reengineering/spec.md)
+- **Status**: [COMPLETED] | [**conductor/tracks/aws-reengineering/spec.md**](file://./tracks/aws-reengineering/spec.md)
 - **Priority**: HIGH
 
 ### Track: gcp-reengineering (Phase 1)
 - **Owner**: @specialist-gcp
 - **Goal**: Implement Shared VPC topology and Workload Identity auditing.
-- **Status**: [PLANNING] | [**conductor/tracks/gcp-reengineering/spec.md**](file://./tracks/gcp-reengineering/spec.md)
+- **Status**: [COMPLETED] | [**conductor/tracks/gcp-reengineering/spec.md**](file://./tracks/gcp-reengineering/spec.md)
 - **Priority**: HIGH
 
 ### Track: sre-production-gate (Phase 2)
