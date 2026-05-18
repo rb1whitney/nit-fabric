@@ -29,11 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: OIDC Authentication (Identity Sovereignty)
-        # uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d44e03b0065 # v2.0.0
-        # with:
-        #   role-to-assume: arn:aws:iam::1234567890:role/nit-fabric-ci
-        #   aws-region: us-east-1
-        run: echo "Staff Hardening: OIDC Auth Handshake Simulated"
+        run: echo 'Staff Hardening - OIDC Auth Handshake Simulated'
       - name: Checkov Sovereignty Scan
         uses: bridgecrewio/checkov-action@1004a259c63600f13a0c50ce733cf62f5b5f2a96 # SHA-Pinning
         with:
