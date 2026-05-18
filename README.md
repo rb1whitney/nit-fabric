@@ -66,3 +66,5 @@ A rules-based engine that evaluates the `context.json` against policies defined 
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details on adding new policies and running tests.
+## SRE & Operations
+This project adheres to the Agentic SRE Protocol. See `runbooks/` for incident response guides and `terraform/sre-monitoring.tf` for the defined Golden Signals.
