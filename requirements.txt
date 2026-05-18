@@ -8,3 +8,4 @@ pytest-cov>=4.0.0
 jinja2>=3.1.0
 PyYAML>=6.0.0
 networkx>=3.0
+z3-solver>=4.12.0
