@@ -3,11 +3,11 @@ import ipaddress
 import sys
 import os
 
-# Add bin to path
-sys.path.append(os.path.join(os.getcwd(), "projects/nit-fabric/bin"))
+# Add src to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from policies import CIDROverlapPolicy, PublicIngressPolicy, PolicyEngine
-from schemas import UnifiedSecurityRule
+from nit_fabric.policies import CIDROverlapPolicy, PublicIngressPolicy, PolicyEngine
+from nit_fabric.schemas import UnifiedSecurityRule
 
 class TestConnectivityEngine(unittest.TestCase):
 
@@ -60,7 +60,7 @@ class TestConnectivityEngine(unittest.TestCase):
         self.assertIn("GCP_SQL_PUBLIC_IP", policy_names)
 
     def test_resource_attribute_policy(self):
-        from policies import ResourceAttributePolicy
+        from nit_fabric.policies import ResourceAttributePolicy
         params = {
             "resource_type": "aws_s3_buckets",
             "attribute": "versioning",
@@ -80,7 +80,7 @@ class TestConnectivityEngine(unittest.TestCase):
         self.assertEqual(violations[0].metadata["resource"], "bad-bucket")
 
     def test_inspection_vpc_policy(self):
-        from policies import InspectionVPCPolicy
+        from nit_fabric.policies import InspectionVPCPolicy
         policy = InspectionVPCPolicy(name="INSPEC_TEST", description="Test")
         
         # Scenario 1: Missing inspection VPC
