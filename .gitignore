@@ -16,3 +16,6 @@ discovery_logs/
 .DS_Store
 credentials.json
 .env
+out/
+*.egg-info/
+

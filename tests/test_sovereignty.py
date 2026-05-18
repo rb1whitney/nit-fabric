@@ -5,7 +5,7 @@ import os
 import importlib.util
 
 # Ensure local skills are discoverable
-skills_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "skills"))
+skills_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agent", "skills"))
 
 def load_skill_logic(skill_name):
     module_path = os.path.join(skills_path, skill_name, "logic.py")

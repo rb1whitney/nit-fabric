@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nit-fabric"
+version = "0.1.0"
+description = "Network Infrastructure Topology Fabric"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "boto3",
+    "google-cloud-sdk",
+    "jinja2",
+    "pyyaml",
+    "pydantic",
+    "networkx"
+]
+
+[project.scripts]
+nit-fabric = "nit_fabric.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
