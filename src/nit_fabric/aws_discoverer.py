@@ -177,11 +177,46 @@ class AWSDiscoverer:
             logger.error(f"Error describing VPC Endpoints: {e}")
             return []
 
+    def get_s3_buckets(self) -> List[Dict[str, Any]]:
+        """Audits S3 buckets for public access block settings."""
+        if boto3 is None or not self.ec2:  # Safe check for client init
+            return []
+        try:
+            s3 = boto3.client("s3")
+            buckets_response = s3.list_buckets()
+            results = []
+            
+            for bucket in buckets_response.get("Buckets", []):
+                name = bucket["Name"]
+                public_access = False
+                try:
+                    pab = s3.get_public_access_block(Bucket=name)
+                    config = pab.get("PublicAccessBlockConfiguration", {})
+                    if not all([config.get("BlockPublicAcls"), config.get("IgnorePublicAcls"),
+                                config.get("BlockPublicPolicy"), config.get("RestrictPublicBuckets")]):
+                        public_access = True
+                except ClientError as e:
+                    if e.response["Error"]["Code"] == "NoSuchPublicAccessBlockConfiguration":
+                        public_access = True
+                except Exception:
+                    pass
+                
+                results.append({
+                    "name": name,
+                    "public_access": public_access
+                })
+            return results
+        except Exception as e:
+            logger.error(f"Failed to audit S3 buckets: {e}")
+            return []
+
     def discover_all(self) -> Dict[str, Any]:
         return {
             "vpcs": self.get_vpcs(),
             "transit_gateways": self.get_transit_gateways(),
             "direct_connect_gateways": self.get_direct_connect_gateways(),
             "route_tables": self.get_route_tables_detailed(),
-            "vpc_endpoints": self.get_vpc_endpoints_detailed()
+            "vpc_endpoints": self.get_vpc_endpoints_detailed(),
+            "aws_s3_buckets": self.get_s3_buckets()
         }
+
