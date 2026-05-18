@@ -58,17 +58,22 @@ def main():
 
     try:
         if args.command == "scan":
-            verbose_flag = "--verbose" if args.verbose else ""
-            subprocess.run(f"{sys.executable} {base_dir}/discover.py --mode {args.mode} {verbose_flag}", shell=True, check=True)
+            cmd = [sys.executable, str(base_dir / "discover.py"), "--mode", args.mode]
+            if args.verbose:
+                cmd.append("--verbose")
+            subprocess.run(cmd, check=True)
             subprocess.run([sys.executable, str(base_dir / "security_graph.py")], check=True)
         
         elif args.command == "visualize":
             subprocess.run([sys.executable, str(base_dir / "visualizer.py")], check=True)
         
         elif args.command == "remediate":
-            validate_flag = "--validate" if args.validate else ""
-            explain_flag = "--explain" if args.explain else ""
-            subprocess.run(f"{sys.executable} {base_dir}/remediator.py --provider {args.provider} {validate_flag} {explain_flag}", shell=True, check=True)
+            cmd = [sys.executable, str(base_dir / "remediator.py"), "--provider", args.provider]
+            if args.validate:
+                cmd.append("--validate")
+            if args.explain:
+                cmd.append("--explain")
+            subprocess.run(cmd, check=True)
         
         elif args.command == "test":
             print("### nit-fabric regression test suite ###")
