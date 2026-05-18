@@ -59,10 +59,10 @@ A rules-based engine that evaluates the `context.json` against policies defined 
 | Discovery Failure | Auth Error | Run `aws sts get-caller-identity` to check credentials. |
 
 ## TODO / Known Issues
-- [ ] GCP discovery is still a bit basic (need to add more resource types).
-- [ ] Terraform provider needs better error handling for complex HCL.
+- [x] GCP discovery: Enhanced with high-resolution peerings, firewalls, IAM roles, and Cloud Asset inventory scans.
+- [x] Terraform provider: Hardened with real OPA Rego validation rules and `terraform validate` structural sandbox gates.
 - [ ] Add support for Azure (long term).
-- [ ] Performance: O(n^2) CIDR check is slow if you have 1000+ subnets.
+- [x] Performance: Deployed the Z3 SMT Solver for ultra-fast bit-vector CIDR containment and overlap reachability proofs.
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details on adding new policies and running tests.
