@@ -21,7 +21,7 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_entry)
 
 logger = logging.getLogger("nit-fabric.scanner")
-handler = logging.StreamHandler(sys.stdout)
+handler = logging.StreamHandler(sys.stderr)
 handler.setFormatter(JsonFormatter())
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)

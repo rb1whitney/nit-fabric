@@ -150,5 +150,15 @@ class TestGCPDiscovery(unittest.TestCase):
         self.assertIn("gcp_iam_policies", data)
         self.assertIn("gcp_assets", data)
 
+    def test_security_sanitization(self):
+        """Verify illegal input characters raise ValueError to prevent injection."""
+        with self.assertRaises(ValueError):
+            self.discoverer.get_vpc_peerings("my-project; rm -rf /")
+        with self.assertRaises(ValueError):
+            self.discoverer.get_vpc_peerings("project-with-spaces ")
+        with self.assertRaises(ValueError):
+            self.discoverer.get_vpc_peerings("project|some-command")
+
 if __name__ == "__main__":
     unittest.main()
+

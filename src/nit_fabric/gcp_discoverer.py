@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import subprocess
 from typing import Dict, Any, List
 
@@ -8,6 +9,15 @@ logger = logging.getLogger("nit-fabric.discovery.gcp")
 class GCPDiscoverer:
     def __init__(self):
         pass
+
+    def _sanitize_string(self, val: str, regex: str = r"^[a-zA-Z0-9\-\.\@\_\/]+$") -> str:
+        """Prevents argument injection by validating parameters against strict character classes."""
+        if not val:
+            return ""
+        if not re.match(regex, val):
+            raise ValueError(f"Security Constraint: Input string contains invalid characters: {val}")
+        return val
+
 
     def _run_cli(self, cmd: List[str]) -> str:
         logger.debug(f"Executing GCP CLI command: {' '.join(cmd)}")
@@ -25,6 +35,7 @@ class GCPDiscoverer:
 
     def get_shared_vpc_topology(self, host_project: str) -> Dict[str, Any]:
         """Maps host project and associated service projects + usable subnets."""
+        host_project = self._sanitize_string(host_project)
         try:
             # Service projects
             srv_out = self._run_cli([
@@ -59,6 +70,7 @@ class GCPDiscoverer:
 
     def get_vpc_peerings(self, project_id: str) -> List[Dict[str, Any]]:
         """Audits active VPC network peerings to verify project isolation."""
+        project_id = self._sanitize_string(project_id)
         try:
             out = self._run_cli([
                 "gcloud", "compute", "networks", "peerings", "list",
@@ -71,6 +83,7 @@ class GCPDiscoverer:
 
     def get_hierarchical_firewalls(self, parent_id: str) -> List[Dict[str, Any]]:
         """Audits Org or Folder level effective firewall policies."""
+        parent_id = self._sanitize_string(parent_id)
         try:
             # e.g., parent_id = "organizations/123456" or "folders/78910"
             out = self._run_cli([
@@ -84,6 +97,7 @@ class GCPDiscoverer:
 
     def get_project_firewall_rules(self, project_id: str) -> List[Dict[str, Any]]:
         """Fetches project-level firewall rules to detect shadow policies."""
+        project_id = self._sanitize_string(project_id)
         try:
             out = self._run_cli([
                 "gcloud", "compute", "firewall-rules", "list",
@@ -106,6 +120,7 @@ class GCPDiscoverer:
 
     def audit_workload_identity(self, gsa_email: str) -> List[str]:
         """Audits KSA-to-GSA Workload Identity bindings."""
+        gsa_email = self._sanitize_string(gsa_email)
         try:
             out = self._run_cli([
                 "gcloud", "iam", "service-accounts", "get-iam-policy",
@@ -127,6 +142,7 @@ class GCPDiscoverer:
 
     def get_project_iam_policy(self, project_id: str) -> List[Dict[str, Any]]:
         """Audits project-level IAM bindings to detect GSA over-privileges."""
+        project_id = self._sanitize_string(project_id)
         try:
             out = self._run_cli([
                 "gcloud", "projects", "get-iam-policy", project_id, "--format=json"
@@ -139,6 +155,7 @@ class GCPDiscoverer:
 
     def get_asset_inventory_resources(self, project_id: str) -> List[Dict[str, Any]]:
         """Fetches a point-in-time snapshot of resources via Cloud Asset Inventory."""
+        project_id = self._sanitize_string(project_id)
         try:
             out = self._run_cli([
                 "gcloud", "asset", "search-all-resources",
@@ -151,6 +168,7 @@ class GCPDiscoverer:
 
     def get_instances(self, project_id: str) -> List[Dict[str, Any]]:
         """Fetches Compute Engine instances to audit public IP exposure."""
+        project_id = self._sanitize_string(project_id)
         try:
             out = self._run_cli([
                 "gcloud", "compute", "instances", "list",
@@ -177,6 +195,7 @@ class GCPDiscoverer:
 
     def get_gke_clusters(self, project_id: str) -> List[Dict[str, Any]]:
         """Fetches GKE clusters to audit Workload Identity configuration."""
+        project_id = self._sanitize_string(project_id)
         try:
             out = self._run_cli([
                 "gcloud", "container", "clusters", "list",
@@ -198,6 +217,7 @@ class GCPDiscoverer:
 
     def get_subnets(self, project_id: str) -> List[Dict[str, Any]]:
         """Fetches VPC subnets to audit Private Google Access properties."""
+        project_id = self._sanitize_string(project_id)
         try:
             out = self._run_cli([
                 "gcloud", "compute", "networks", "subnets", "list",
@@ -217,6 +237,7 @@ class GCPDiscoverer:
 
     def get_vpc_service_controls(self, project_id: str) -> List[Dict[str, Any]]:
         """Audits active VPC Service Controls policies."""
+        project_id = self._sanitize_string(project_id)
         try:
             # Query policies
             out = self._run_cli([
@@ -230,6 +251,7 @@ class GCPDiscoverer:
 
     def get_scc_findings(self, project_id: str) -> List[Dict[str, Any]]:
         """Audits Security Command Center findings for vulnerabilities."""
+        project_id = self._sanitize_string(project_id)
         try:
             out = self._run_cli([
                 "gcloud", "scc", "findings", "list",

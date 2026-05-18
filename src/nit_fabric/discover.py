@@ -36,14 +36,24 @@ class CloudDiscoverer:
             aws_data = self.aws_disc.discover_all()
             
             # Legacy compatible keys
-            context["aws_s3_buckets"] = self.aws_disc.get_vpc_endpoints_detailed() # Mock public check
+            context["aws_s3_buckets"] = aws_data.get("aws_s3_buckets", [])
             context["vpcs"] = aws_data.get("vpcs", [])
             context["aws_cidrs"] = [vpc.get("CidrBlock") for vpc in aws_data.get("vpcs", []) if vpc.get("CidrBlock")]
 
             # Run high-res GCP discoverer
             project_id = self._run_cli(["gcloud", "config", "get-value", "project"]).strip()
-            # Try to get active folder/org parent id from environment or command line
+            # Try to get active folder/org parent id dynamically
             parent_id = ""
+            if project_id:
+                try:
+                    proj_desc_out = self._run_cli(["gcloud", "projects", "describe", project_id, "--format=json"])
+                    proj_desc = json.loads(proj_desc_out) if proj_desc_out else {}
+                    parent = proj_desc.get("parent", {})
+                    if parent:
+                        parent_id = f"{parent.get('type')}s/{parent.get('id')}"
+                except Exception as e:
+                    logger.warning(f"Could not resolve project parent hierarchy: {e}")
+            
             if project_id:
                 gcp_data = self.gcp_disc.discover_all(project_id, parent_id)
                 context.update(gcp_data)
