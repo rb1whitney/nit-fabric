@@ -19,3 +19,12 @@ credentials.json
 out/
 *.egg-info/
 
+
+# Specific Pycache exclusions
+.agent/skills/__pycache__/
+.agent/skills/ipam-expert/__pycache__/
+.agent/skills/sovereignty-enforcer/__pycache__/
+src/nit_fabric/__pycache__/
+src/nit_fabric/verification/__pycache__/
+tests/__pycache__/
+tests/verification/__pycache__/

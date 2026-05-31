@@ -4,20 +4,20 @@
   "archetype": "Industrial Networking Backbone",
   "experts": [
     {
-      "id": "bgp-audit",
-      "logic": "logic.py",
+      "id": "skill-bgp-audit",
+      "logic": "skill-bgp-audit/logic.py",
       "capability": "Async BGP/BFD Diagnostics",
       "standard": "Logic 3.0"
     },
     {
-      "id": "ipam-expert",
-      "logic": "logic.py",
+      "id": "skill-ipam-expert",
+      "logic": "skill-ipam-expert/logic.py",
       "capability": "Radix Trie CIDR Disjointness Proving",
       "algorithm": "O(k)"
     },
     {
-      "id": "sovereignty-enforcer",
-      "logic": "logic.py",
+      "id": "skill-sovereignty-enforcer",
+      "logic": "skill-compliance-auditor/scripts/sovereignty-enforcer/logic.py",
       "capability": "Law of Excision Security Auditing"
     }
   ]
