@@ -1,4 +1,5 @@
 # nit-fabric | Multi-Cloud Network Auditor
+*Automated Network Assurance, IPAM, and Security Drift Enforcement*
 
 **Status**: Shipped | **Architecture**: Modular Cloud Connectivity | **Verification**: Z3-Backed Formal Solving
 
@@ -49,10 +50,7 @@ graph TD
 
 ## 3. Quick Start
 
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+---
 
 2. **Run a scan**:
    ```bash
