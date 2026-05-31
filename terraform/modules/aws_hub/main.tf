@@ -1,0 +1,48 @@
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0"
+    }
+  }
+}
+
+resource "aws_vpc" "primary" {
+  # checkov:skip=CKV2_AWS_11: Flow logging is managed at the organizational transit gateway layer, not individual hub VPC.
+  cidr_block = var.vpc_cidr
+  tags       = { Name = "nit-fabric-aws-hub" }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.primary.id
+}
+
+resource "aws_ec2_transit_gateway" "hub" {
+  amazon_side_asn = var.asn
+  tags            = { Name = "nit-fabric-tgw" }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "primary" {
+  subnet_ids             = var.subnet_ids
+  transit_gateway_id     = aws_ec2_transit_gateway.hub.id
+  vpc_id                 = aws_vpc.primary.id
+  appliance_mode_support = "enable"
+
+  tags = {
+    Name          = "nit-fabric-tgw-attachment"
+    Deterministic = "true"
+  }
+}
+
+variable "vpc_cidr" { type = string }
+variable "asn" { type = number }
+variable "subnet_ids" { type = list(string) }

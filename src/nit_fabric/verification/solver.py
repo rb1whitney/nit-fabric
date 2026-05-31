@@ -41,8 +41,15 @@ class NetworkSolver:
 
     def check_containment(self, parent_cidr: str, child_cidr: str) -> bool:
         """
-        Mathematically proves if parent_cidr completely contains child_cidr.
-        If C & not P is unsat, containment is proven.
+        Proves whether a parent network completely encapsulates a child subnet.
+
+        Purpose:
+            Mathematical confirmation of subnetwork hierarchies using SMT theorem proving.
+        Inputs:
+            parent_cidr (str): CIDR representation of the outer network (e.g. "10.0.0.0/16").
+            child_cidr (str): CIDR representation of the inner network (e.g. "10.0.1.0/24").
+        Outputs:
+            bool: True if containment is mathematically proven (or if fallback returns True), False otherwise.
         """
         if not HAS_Z3:
             # Fallback
@@ -66,8 +73,15 @@ class NetworkSolver:
 
     def check_overlap(self, cidr_a: str, cidr_b: str) -> bool:
         """
-        Mathematically proves if two subnets overlap.
-        If A & B is sat, overlap exists.
+        Proves whether two network ranges intersect.
+
+        Purpose:
+            Mathematical confirmation of address space disjointness.
+        Inputs:
+            cidr_a (str): First CIDR block range.
+            cidr_b (str): Second CIDR block range.
+        Outputs:
+            bool: True if an overlap/intersection is found, False if subnets are completely disjoint.
         """
         if not HAS_Z3:
             # Fallback
@@ -90,9 +104,17 @@ class NetworkSolver:
 
     def verify_ingress_security(self, rules: List[Dict[str, Any]], protected_cidr: str) -> Tuple[bool, Optional[str]]:
         """
-        Proves if any public source IP can reach the protected_cidr database network
-        given the provided firewall rules. Returns (True, None) if secure (unsat),
-        or (False, counterexample_msg) if vulnerable (sat).
+        Runs SMT reachability checks to verify that no public source IP can access the protected network space.
+
+        Purpose:
+            Verify firewall rules-engine invariants mathematically and identify counter-example routing paths.
+        Inputs:
+            rules (List[Dict[str, Any]]): Collection of firewall rules (action, direction, source_ranges, destination_ranges).
+            protected_cidr (str): The target network range to protect from public exposure.
+        Outputs:
+            Tuple[bool, Optional[str]]:
+                - bool: True if the network is securely isolated (no public path exists), False if a leak path exists.
+                - Optional[str]: Explanatory string containing the Z3 counter-example IP values if vulnerable.
         """
         if not HAS_Z3:
             # High-fidelity python emulator for local runners

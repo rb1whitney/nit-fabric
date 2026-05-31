@@ -1,4 +1,12 @@
 # nit-fabric | Local Exclusions
+
+# --- IDE Configurations & Local CLI Metadata ---
+# Exclude local editor settings to prevent team-wide workspace setting conflicts
+.vscode/
+# Exclude local CLI metadata and runner states to prevent state leakage
+.antigravitycli/
+
+# --- Python Interpreter & Bytecode Caches ---
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,20 +15,25 @@ venv/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# --- Discovered Cloud Context & Outputs ---
+# Exclude dynamically discovered state reports and generated validation outputs
 context.json
 violations.json
 network_state.md
 network_state.json
 discovery_logs/
 *.log
-.DS_Store
-credentials.json
-.env
 out/
 *.egg-info/
 
+# --- Secrets & Environment Configurations ---
+# Prevent cryptographic credentials, session properties, and secrets from leakage
+.DS_Store
+credentials.json
+.env
 
-# Specific Pycache exclusions
+# --- Specific Agent Skill Pycache Exclusions ---
 .agent/skills/__pycache__/
 .agent/skills/ipam-expert/__pycache__/
 .agent/skills/sovereignty-enforcer/__pycache__/

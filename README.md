@@ -1,4 +1,5 @@
 # nit-fabric | Multi-Cloud Network Auditor
+*Automated Network Assurance, IPAM, and Security Drift Enforcement*
 
 **Status**: Shipped | **Architecture**: Modular Cloud Connectivity | **Verification**: Z3-Backed Formal Solving
 
@@ -49,10 +50,7 @@ graph TD
 
 ## 3. Quick Start
 
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+---
 
 2. **Run a scan**:
    ```bash
@@ -65,8 +63,6 @@ graph TD
    PYTHONPATH=src python3 src/nit_fabric/main.py remediate --provider terraform
    ```
 
-## 4. Operational Context & Systemic Constraints
-
 This engine operates in high-security environments where network misconfigurations represent systemic failure risks.
 
 ### Systemic Constraints & SLOs
@@ -74,6 +70,16 @@ This engine operates in high-security environments where network misconfiguratio
 - **Formal Verification**: IPAM/CIDR disjointness verified via **Z3 SMT Solver** (O(k) complexity).
 - **Supply-Chain Sovereignty**: 100% **OIDC Passwordless Authentication** and **SHA-pinned** workflows.
 - **Discovery Accuracy**: Target 100% precision in identifying "Ghost Dependencies" and "Silent Discovery Failures".
+
+---
+
+## 4. Troubleshooting & Documentation Links
+For deep architectural details, consult the specialized documents:
+* **System Overview & Trade-offs**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+* **BGP, Routing, & IPAM Math**: [docs/NETWORKING.md](docs/NETWORKING.md)
+* **Zero-Trust Guardrails & Security Policies**: [docs/SECURITY.md](docs/SECURITY.md)
+* **Runbooks & Credentials**: [docs/OPERATIONS.md](docs/OPERATIONS.md)
+* **Developer Guide & Code Tour**: [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 
 ## 5. Architecture Trade-Off Matrix
 

@@ -8,7 +8,10 @@ import importlib.util
 skills_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agent", "skills"))
 
 def load_skill_logic(skill_name):
-    module_path = os.path.join(skills_path, skill_name, "logic.py")
+    if skill_name == "sovereignty-enforcer":
+        module_path = os.path.join(skills_path, "skill-compliance-auditor", "scripts", "sovereignty-enforcer", "logic.py")
+    else:
+        module_path = os.path.join(skills_path, skill_name, "logic.py")
     spec = importlib.util.spec_from_file_location(f"{skill_name}.logic", module_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
