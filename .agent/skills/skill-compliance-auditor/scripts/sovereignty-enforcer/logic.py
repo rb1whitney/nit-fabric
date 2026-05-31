@@ -23,18 +23,42 @@ def audit_rule(destination: str) -> bool:
     return True
 
 def audit_topology(nodes: list, edges: list) -> bool:
-    """Mathematical graph-based sovereignty audit."""
-    import networkx as nx
+    """
+    Runs a graph-based reachability audit to verify network boundary isolation.
+
+    Purpose:
+        Ensure no path exists from internal workloads to restricted resources using native DFS.
+    Inputs:
+        nodes (list): Collection of node identifier strings.
+        edges (list): Collection of source-target tuple pairs.
+    Outputs:
+        bool: True if isolation invariants hold, False if breach path exists.
+    """
     logger.info("Initiating Topology Graph Audit")
     
-    G = nx.DiGraph()
-    G.add_nodes_from(nodes)
-    G.add_edges_from(edges)
-    
-    # RULE: No internal node should have an path to 'restricted' without passing through 'audit-gateway'
-    # This is a placeholder for more complex logic
-    if "internal" in G and "restricted" in G:
-        if nx.has_path(G, "internal", "restricted"):
+    # Build adjacency list representation from nodes and directed edges
+    adj = {node: [] for node in nodes}
+    for u, v in edges:
+        if u in adj:
+            adj[u].append(v)
+            
+    # DFS reachability algorithm to check path from "internal" to "restricted"
+    if "internal" in adj and "restricted" in adj:
+        visited = set()
+        stack = ["internal"]
+        has_path = False
+        while stack:
+            curr = stack.pop()
+            if curr == "restricted":
+                has_path = True
+                break
+            if curr not in visited:
+                visited.add(curr)
+                for neighbor in adj.get(curr, []):
+                    if neighbor not in visited:
+                        stack.append(neighbor)
+                        
+        if has_path:
             logger.critical("SOVEREIGNTY BREACH: Unauthorized path from internal to restricted.")
             return False
             

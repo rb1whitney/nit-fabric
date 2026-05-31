@@ -40,7 +40,7 @@ resource "google_compute_firewall" "hub_boundary" {
   provider = google.secondary
   name     = "nit-fabric-hub-boundary-fw"
   network  = google_compute_network.secondary.name
-  
+
   allow {
     protocol = "tcp"
     ports    = ["0-65535"]

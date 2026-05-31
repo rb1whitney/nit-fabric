@@ -1,18 +1,19 @@
 resource "google_compute_network" "main" {
   name                    = "nit-fabric-gcp-spoke"
   auto_create_subnetworks = false
-  
+
   lifecycle {
     prevent_destroy = true
   }
 }
 
 resource "google_compute_subnetwork" "primary" {
-  name                     = "nit-fabric-spoke-primary"
-  ip_cidr_range            = var.subnet_cidr
-  region                   = var.region
-  network                  = google_compute_network.main.id
-  private_ip_google_access = true
+  name                       = "nit-fabric-spoke-primary"
+  ip_cidr_range              = var.subnet_cidr
+  region                     = var.region
+  network                    = google_compute_network.main.id
+  private_ip_google_access   = true
+  private_ipv6_google_access = "ENABLE_OUTBOUND_VM_ACCESS_TO_GOOGLE"
 
   log_config {
     aggregation_interval = "INTERVAL_5_SEC"

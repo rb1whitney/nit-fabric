@@ -6,7 +6,7 @@ module "aws_hub" {
   vpc_cidr   = var.vpc_cidr_aws
   asn        = 64512
   subnet_ids = [aws_subnet.transit_0.id]
-  
+
   # SENIOR SAFEGUARD: Prevent accidental hub excision
   lifecycle {
     prevent_destroy = true
