@@ -14,8 +14,10 @@ module "aws_hub" {
 }
 
 module "gcp_spoke" {
-  source = "./modules/gcp_spoke"
-  asn    = 64600
+  source      = "./modules/gcp_spoke"
+  asn         = var.gcp_asn
+  region      = var.gcp_region_secondary
+  subnet_cidr = var.vpc_cidr_gcp
 
   lifecycle {
     prevent_destroy = true

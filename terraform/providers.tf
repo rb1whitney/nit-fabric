@@ -27,11 +27,11 @@ terraform {
 
 provider "aws" {
   alias  = "primary"
-  region = "us-east-1"
+  region = var.aws_region_primary
 }
 
 provider "google" {
   alias   = "secondary"
   project = var.gcp_project_id
-  region  = "us-central1"
+  region  = var.gcp_region_secondary
 }

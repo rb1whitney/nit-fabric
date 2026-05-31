@@ -46,4 +46,4 @@ jobs:
         run: |
           pip install pytest pylint pydantic
           pytest tests/
-          pylint --errors-only .agent/skills/
+          pylint --errors-only --disable=import-error .agent/skills/

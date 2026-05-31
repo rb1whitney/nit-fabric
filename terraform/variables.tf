@@ -43,11 +43,4 @@ variable "gcp_asn" {
   }
 }
 
-variable "bgp_interface_range_0" {
-  type    = string
-  default = "169.254.0.1/30"
-  validation {
-    condition     = can(cidrnetmask(var.bgp_interface_range_0))
-    error_message = "PROACTIVE DEFENSE: Invalid BGP interface range."
-  }
-}
+
