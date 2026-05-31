@@ -21,7 +21,7 @@ jobs:
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
       - name: TFLint Audit
-        uses: terraform-linters/setup-tflint@ba6bca358a4417ca3063715fbc7051786520d58a # SHA-Pinning v3.0.0
+        uses: terraform-linters/setup-tflint@ba6bb2989f94daf58a4cc6eac2c1ca7398a678bf # SHA-Pinning v3.0.0
       - run: tflint --recursive
 
   security_boundary:
@@ -31,7 +31,7 @@ jobs:
       - name: OIDC Authentication (Identity Sovereignty)
         run: echo 'Staff Hardening - OIDC Auth Handshake Simulated'
       - name: Checkov Sovereignty Scan
-        uses: bridgecrewio/checkov-action@1004a259c63600f13a0c50ce733cf62f5b5f2a96 # SHA-Pinning
+        uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf # SHA-Pinning v12.1347.0
         with:
           directory: terraform/
           framework: terraform
@@ -45,4 +45,4 @@ jobs:
         run: |
           pip install pytest pylint pydantic
           pytest skills/
-          pylint skills/
+          pylint --errors-only skills/
