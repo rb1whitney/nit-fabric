@@ -13,7 +13,7 @@ def load_skill_logic(skill_name):
     spec.loader.exec_module(module)
     return module
 
-ipam_logic = load_skill_logic("ipam-expert")
+ipam_logic = load_skill_logic("skill-ipam-expert")
 RadixTrie = ipam_logic.RadixTrie
 
 class TestIPAMDeterminism(unittest.TestCase):

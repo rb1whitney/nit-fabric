@@ -4,7 +4,8 @@ on:
   pull_request:
     paths:
       - 'terraform/**'
-      - 'skills/**'
+      - '.agent/skills/**'
+      - 'tests/**'
 
 # STAFF HARDENING: Identity Sovereignty (OIDC Connect Permits)
 permissions:
@@ -44,5 +45,5 @@ jobs:
       - name: Python Logic Audit
         run: |
           pip install pytest pylint pydantic
-          pytest skills/
-          pylint --errors-only skills/
+          pytest tests/
+          pylint --errors-only .agent/skills/

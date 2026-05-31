@@ -19,8 +19,18 @@ class ValidatorGate:
 
     def validate_syntax(self, hcl_content: str) -> Tuple[bool, List[str]]:
         """
-        Validates the HCL syntax of a generated patch.
-        Uses `terraform validate` if available, otherwise falls back to structural bracket checks.
+        Checks the HCL syntax validity of a generated Terraform remediation block.
+        Utilizes the Terraform CLI validation pipeline when present, dropping environment-dependent
+        provider constraints. Otherwise, falls back to a structural bracket balancing checker.
+
+        Purpose:
+            Prevent syntax-broken code patches from entering pipelines.
+        Inputs:
+            hcl_content (str): Raw string containing HCL configuration content.
+        Outputs:
+            Tuple[bool, List[str]]:
+                - bool: True if the syntax checks pass successfully, False otherwise.
+                - List[str]: Collection of syntax diagnostic errors found during scanning.
         """
         errors = []
         
@@ -41,10 +51,16 @@ class ValidatorGate:
                     try:
                         detail = json.loads(res.stdout)
                         for diag in detail.get("diagnostics", []):
-                            errors.append(diag.get("summary", "Validation Error"))
+                            summary = diag.get("summary", "Validation Error")
+                            # Ignore environment/provider initialization errors since we are only validating HCL syntax
+                            if "required provider" in summary.lower() or "provider registry" in summary.lower():
+                                continue
+                            errors.append(summary)
+                        if errors:
+                            return False, errors
                     except json.JSONDecodeError:
                         errors.append(res.stderr or "Terraform validation failed.")
-                    return False, errors
+                        return False, errors
                 return True, []
                 
         except FileNotFoundError:
@@ -92,8 +108,16 @@ class ValidatorGate:
 
     def evaluate_security(self, data: Dict[str, Any]) -> List[str]:
         """
-        Evaluates remediation attributes against security policies.
-        Uses OPA Rego CLI if available, otherwise falls back to Python policy assertions.
+        Runs compliance and safety validation audits on the parsed remediation attributes.
+        Uses Open Policy Agent (OPA) with policies defined at remediation_safety.rego if CLI is available,
+        otherwise defaults to the Python OPA rules emulator.
+
+        Purpose:
+            Assert safety invariants (e.g. block wildcard IAM policies, deny wide-open ingress, block destroy actions).
+        Inputs:
+            data (Dict[str, Any]): Dictionary containing parsed HCL resource attribute properties.
+        Outputs:
+            List[str]: A list of rule violation strings. Empty list indicates clean passing checks.
         """
         violations = []
         

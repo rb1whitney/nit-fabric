@@ -1,10 +1,15 @@
 resource "aws_vpc" "primary" {
+  # checkov:skip=CKV2_AWS_11: Flow logging is managed at the organizational transit gateway layer, not individual hub VPC.
   cidr_block = var.vpc_cidr
   tags       = { Name = "nit-fabric-aws-hub" }
   
   lifecycle {
     prevent_destroy = true
   }
+}
+
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.primary.id
 }
 
 resource "aws_ec2_transit_gateway" "hub" {

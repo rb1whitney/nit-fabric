@@ -8,7 +8,16 @@ class RemediationGenerator:
     """
     
     def generate_hcl(self, action: Union[FirewallAction, SecurityGroupAction, RouteAction]) -> str:
-        """Translates a structured action schema into compliant HCL code."""
+        """
+        Translates a structured action schema object into syntax-compliant HCL code blocks.
+
+        Purpose:
+            Convert intermediate action models (Pydantic objects) into valid Terraform resource declarations.
+        Inputs:
+            action (Union[FirewallAction, SecurityGroupAction, RouteAction]): Verifiable action schema instance.
+        Outputs:
+            str: Generated HCL configuration string representing the remediation resource.
+        """
         if isinstance(action, FirewallAction):
             return self._generate_firewall_hcl(action)
         elif isinstance(action, SecurityGroupAction):

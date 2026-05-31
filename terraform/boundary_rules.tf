@@ -4,9 +4,10 @@
 # --- AWS TGW Security (us-east-1) ---
 
 resource "aws_security_group" "tgw_boundary" {
-  provider = aws.primary
-  name     = "nit-fabric-tgw-boundary-sg"
-  vpc_id   = aws_vpc.primary.id
+  # checkov:skip=CKV2_AWS_5: Security group is managed dynamically and attached by workload deployments, not connection baseline.
+  provider    = aws.primary
+  name        = "nit-fabric-tgw-boundary-sg"
+  vpc_id      = module.aws_hub.vpc_id
   description = "Baseline Zero-Trust lockdown for the Transit Gateway Hub"
 
   # INGRESS: Only allow traffic from the GCP Secondary CIDR

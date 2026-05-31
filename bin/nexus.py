@@ -1,6 +1,16 @@
 import os
 
 def setup_symlinks():
+    """
+    Establishes environment symlinks to enforce the Agentic Hub Standard (ACS 2026).
+    Links vendor-specific directories (.claude, .gemini, .copilot, .github) and root markdown
+    agent definitions back to the centralized physical .agent/ vault.
+
+    Inputs:
+        None (reads environment settings and file system paths).
+    Outputs:
+        None (performs filesystem mutation, creating/replacing symlinks).
+    """
     # Root Level Bridges
     root_links = {
         "AGENT.md": "AGENTS.md",
