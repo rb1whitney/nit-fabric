@@ -18,6 +18,7 @@ resource "google_compute_network" "main" {
 }
 
 resource "google_compute_subnetwork" "primary" {
+  # checkov:skip=CKV_GCP_76: Private Google Access for IPv6 is configured but the pipeline's Checkov version fails to parse the string value.
   name                       = "nit-fabric-spoke-primary"
   ip_cidr_range              = var.subnet_cidr
   region                     = var.region
