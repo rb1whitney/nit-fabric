@@ -1,9 +1,12 @@
+import argparse
 import json
 import logging
+import shlex
+import subprocess
 import sys
-import argparse
 from pathlib import Path
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Any
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 # --- SRE Configuration: Professional Logging ---
@@ -27,6 +30,7 @@ class PolicyRemediator:
             loader=FileSystemLoader(str(template_dir)),
             autoescape=select_autoescape()
         )
+        self.env.filters["shell_quote"] = lambda v: shlex.quote(str(v))
         
         if self.provider == "terraform":
             self.template_map = {
@@ -45,8 +49,8 @@ class PolicyRemediator:
                 "INSPECTION_VPC_ENFORCEMENT": "aws_cli_remediation.j2"
             }
 
-    def analyze_failure(self, scenario: Dict[str, Any]) -> Tuple[str, str]:
-        report_id: Optional[str] = scenario.get("id") or scenario.get("violation_type")
+    def analyze_failure(self, scenario: dict[str, Any]) -> tuple[str, str]:
+        report_id: str | None = scenario.get("id") or scenario.get("violation_type")
         
         if not report_id:
             logger.error("Malformed scenario detected: Missing 'id' or 'violation_type'")
@@ -94,6 +98,20 @@ class PolicyRemediator:
 
     def validate_patch(self, patch: str) -> None:
         logger.info("Validating patch safety...")
+        if self.provider == "cli":
+            res = subprocess.run(
+                ["bash", "-n"],
+                input=patch,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            if res.returncode != 0:
+                logger.error(f"[SYNTAX BLOCK] Proposed shell script is invalid: {res.stderr}")
+                raise ValueError(f"Shell Syntax Validation Error: {res.stderr}")
+            logger.info("CLI patch validation: SUCCESS")
+            return
+
         from nit_fabric.validator import ValidatorGate
         gate = ValidatorGate()
         success, errors = gate.validate_syntax(patch)
@@ -113,19 +131,24 @@ def main() -> None:
     parser.add_argument("--provider", choices=["terraform", "cli"], default="terraform", help="Remediation provider")
     parser.add_argument("--input", default=str(default_input), help="Path to violations file")
     parser.add_argument("--output", default=str(default_output), help="Path to save generated patches")
+    parser.add_argument("--validate", action="store_true", help="Perform validation check")
     parser.add_argument("--explain", action="store_true", help="Just explain how to fix each issue (Consultant Mode)")
     args = parser.parse_args()
 
     input_path = Path(args.input)
-    # Fallback to test data if live violations are missing
     if not input_path.exists():
         script_dir = Path(__file__).parent.parent.parent
-        input_path = script_dir / "tests" / "test_failures.json"
+        fallback_path = script_dir / "tests" / "test_failures.json"
+        if fallback_path.exists():
+            input_path = fallback_path
+        else:
+            logger.error(f"Violations file not found at {input_path}. Run 'nit-fabric scan' first.")
+            sys.exit(1)
     
     logger.info(f"Loading input from {input_path}")
 
     try:
-        with open(input_path, "r") as f:
+        with open(input_path) as f:
             content = json.load(f)
             scenarios = content if isinstance(content, list) else content.get("scenarios", [])
             

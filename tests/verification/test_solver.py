@@ -1,7 +1,9 @@
 import unittest
-from nit_fabric.verification.solver import NetworkSolver
-from nit_fabric.verification.models import FirewallAction, SecurityGroupAction, RouteAction
+
 from nit_fabric.verification.generator import RemediationGenerator
+from nit_fabric.verification.models import FirewallAction, SecurityGroupAction
+from nit_fabric.verification.solver import NetworkSolver
+
 
 class TestFormalVerificationEngine(unittest.TestCase):
     """

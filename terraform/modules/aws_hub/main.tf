@@ -31,8 +31,14 @@ resource "aws_ec2_transit_gateway" "hub" {
   }
 }
 
+resource "aws_subnet" "transit_0" {
+  vpc_id     = aws_vpc.primary.id
+  cidr_block = cidrsubnet(var.vpc_cidr, 8, 100)
+  tags       = { Name = "nit-fabric-transit-0" }
+}
+
 resource "aws_ec2_transit_gateway_vpc_attachment" "primary" {
-  subnet_ids             = var.subnet_ids
+  subnet_ids             = length(var.subnet_ids) > 0 ? var.subnet_ids : [aws_subnet.transit_0.id]
   transit_gateway_id     = aws_ec2_transit_gateway.hub.id
   vpc_id                 = aws_vpc.primary.id
   appliance_mode_support = "enable"
@@ -45,4 +51,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "primary" {
 
 variable "vpc_cidr" { type = string }
 variable "asn" { type = number }
-variable "subnet_ids" { type = list(string) }
+variable "subnet_ids" {
+  type    = list(string)
+  default = []
+}

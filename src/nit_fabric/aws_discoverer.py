@@ -1,6 +1,5 @@
 import logging
-import sys
-from typing import Dict, Any, List
+from typing import Any
 
 try:
     import boto3
@@ -27,7 +26,7 @@ class AWSDiscoverer:
             self.ec2 = None
             self.dx = None
 
-    def _is_managed(self, tags: List[Dict[str, str]]) -> bool:
+    def _is_managed(self, tags: list[dict[str, str]]) -> bool:
         if not tags:
             return False
         for tag in tags:
@@ -35,7 +34,7 @@ class AWSDiscoverer:
                 return True
         return False
 
-    def get_vpcs(self) -> List[Dict[str, Any]]:
+    def get_vpcs(self) -> list[dict[str, Any]]:
         if not self.ec2:
             return []
         try:
@@ -51,7 +50,7 @@ class AWSDiscoverer:
             logger.error(f"Error describing VPCs: {e}")
             return []
 
-    def get_transit_gateways(self) -> List[Dict[str, Any]]:
+    def get_transit_gateways(self) -> list[dict[str, Any]]:
         if not self.ec2:
             return []
         try:
@@ -84,7 +83,7 @@ class AWSDiscoverer:
             logger.error(f"Error describing Transit Gateways: {e}")
             return []
 
-    def get_direct_connect_gateways(self) -> List[Dict[str, Any]]:
+    def get_direct_connect_gateways(self) -> list[dict[str, Any]]:
         if not self.dx:
             return []
         try:
@@ -112,7 +111,7 @@ class AWSDiscoverer:
             logger.error(f"Error describing DX Gateways: {e}")
             return []
 
-    def get_route_tables_detailed(self) -> List[Dict[str, Any]]:
+    def get_route_tables_detailed(self) -> list[dict[str, Any]]:
         if not self.ec2:
             return []
         try:
@@ -156,7 +155,7 @@ class AWSDiscoverer:
             logger.error(f"Error describing Route Tables: {e}")
             return []
 
-    def get_vpc_endpoints_detailed(self) -> List[Dict[str, Any]]:
+    def get_vpc_endpoints_detailed(self) -> list[dict[str, Any]]:
         if not self.ec2:
             return []
         try:
@@ -177,7 +176,7 @@ class AWSDiscoverer:
             logger.error(f"Error describing VPC Endpoints: {e}")
             return []
 
-    def get_s3_buckets(self) -> List[Dict[str, Any]]:
+    def get_s3_buckets(self) -> list[dict[str, Any]]:
         """Audits S3 buckets for public access block settings."""
         if boto3 is None or not self.ec2:  # Safe check for client init
             return []
@@ -198,8 +197,12 @@ class AWSDiscoverer:
                 except ClientError as e:
                     if e.response["Error"]["Code"] == "NoSuchPublicAccessBlockConfiguration":
                         public_access = True
-                except Exception:
-                    pass
+                    else:
+                        logger.warning(f"Unable to audit S3 bucket {name} public access: {e}")
+                        public_access = "UNKNOWN"
+                except Exception as e:
+                    logger.warning(f"Unexpected error auditing S3 bucket {name}: {e}")
+                    public_access = "UNKNOWN"
                 
                 results.append({
                     "name": name,
@@ -210,13 +213,42 @@ class AWSDiscoverer:
             logger.error(f"Failed to audit S3 buckets: {e}")
             return []
 
-    def discover_all(self) -> Dict[str, Any]:
+    def get_probes(self) -> list[dict[str, Any]]:
+        if boto3 is None:
+            return []
+        try:
+            lambda_client = boto3.client("lambda")
+            paginator = lambda_client.get_paginator("list_functions")
+            probes = []
+            for page in paginator.paginate():
+                for f in page.get("Functions", []):
+                    try:
+                        arn = f["FunctionArn"]
+                        tags = lambda_client.list_tags(Resource=arn).get("Tags", {})
+                        if tags.get("nit-fabric:type") == "probe":
+                            url_config = lambda_client.get_function_url_config(FunctionName=f["FunctionName"])
+                            probes.append({
+                                "name": f["FunctionName"],
+                                "url": url_config.get("FunctionUrl"),
+                                "cloud": "aws"
+                            })
+                    except lambda_client.exceptions.ResourceNotFoundException:
+                        continue
+                    except Exception as e:
+                        logger.warning(f"Skipping Lambda probe {f.get('FunctionName')}: {e}")
+            return probes
+        except Exception as e:
+            logger.error(f"Error discovering AWS probes: {e}")
+            return []
+
+    def discover_all(self) -> dict[str, Any]:
         return {
             "vpcs": self.get_vpcs(),
             "transit_gateways": self.get_transit_gateways(),
             "direct_connect_gateways": self.get_direct_connect_gateways(),
             "route_tables": self.get_route_tables_detailed(),
             "vpc_endpoints": self.get_vpc_endpoints_detailed(),
-            "aws_s3_buckets": self.get_s3_buckets()
+            "aws_s3_buckets": self.get_s3_buckets(),
+            "aws_probes": self.get_probes()
         }
 

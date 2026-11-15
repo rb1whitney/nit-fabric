@@ -2,7 +2,7 @@ import json
 import logging
 import re
 import subprocess
-from typing import Dict, Any, List
+from typing import Any
 
 logger = logging.getLogger("nit-fabric.discovery.gcp")
 
@@ -10,7 +10,7 @@ class GCPDiscoverer:
     def __init__(self):
         pass
 
-    def _sanitize_string(self, val: str, regex: str = r"^[a-zA-Z0-9\-\.\@\_\/]+$") -> str:
+    def _sanitize_string(self, val: str, regex: str = r"^[a-zA-Z0-9][a-zA-Z0-9\-\.\@\_\/]*$") -> str:
         """Prevents argument injection by validating parameters against strict character classes."""
         if not val:
             return ""
@@ -19,7 +19,7 @@ class GCPDiscoverer:
         return val
 
 
-    def _run_cli(self, cmd: List[str]) -> str:
+    def _run_cli(self, cmd: list[str]) -> str:
         logger.debug(f"Executing GCP CLI command: {' '.join(cmd)}")
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -33,7 +33,7 @@ class GCPDiscoverer:
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
-    def get_shared_vpc_topology(self, host_project: str) -> Dict[str, Any]:
+    def get_shared_vpc_topology(self, host_project: str) -> dict[str, Any]:
         """Maps host project and associated service projects + usable subnets."""
         host_project = self._sanitize_string(host_project)
         try:
@@ -68,7 +68,7 @@ class GCPDiscoverer:
                 "usable_subnets": []
             }
 
-    def get_vpc_peerings(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_vpc_peerings(self, project_id: str) -> list[dict[str, Any]]:
         """Audits active VPC network peerings to verify project isolation."""
         project_id = self._sanitize_string(project_id)
         try:
@@ -81,7 +81,7 @@ class GCPDiscoverer:
             logger.error(f"Failed to audit VPC peerings for {project_id}: {e}")
             return []
 
-    def get_hierarchical_firewalls(self, parent_id: str) -> List[Dict[str, Any]]:
+    def get_hierarchical_firewalls(self, parent_id: str) -> list[dict[str, Any]]:
         """Audits Org or Folder level effective firewall policies."""
         parent_id = self._sanitize_string(parent_id)
         try:
@@ -95,7 +95,7 @@ class GCPDiscoverer:
             logger.error(f"Failed to audit hierarchical firewalls for {parent_id}: {e}")
             return []
 
-    def get_project_firewall_rules(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_project_firewall_rules(self, project_id: str) -> list[dict[str, Any]]:
         """Fetches project-level firewall rules to detect shadow policies."""
         project_id = self._sanitize_string(project_id)
         try:
@@ -118,7 +118,7 @@ class GCPDiscoverer:
             logger.error(f"Failed to fetch project firewall rules for {project_id}: {e}")
             return []
 
-    def audit_workload_identity(self, gsa_email: str) -> List[str]:
+    def audit_workload_identity(self, gsa_email: str) -> list[str]:
         """Audits KSA-to-GSA Workload Identity bindings."""
         gsa_email = self._sanitize_string(gsa_email)
         try:
@@ -140,7 +140,7 @@ class GCPDiscoverer:
             logger.error(f"Failed to audit Workload Identity for {gsa_email}: {e}")
             return []
 
-    def get_project_iam_policy(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_project_iam_policy(self, project_id: str) -> list[dict[str, Any]]:
         """Audits project-level IAM bindings to detect GSA over-privileges."""
         project_id = self._sanitize_string(project_id)
         try:
@@ -153,7 +153,7 @@ class GCPDiscoverer:
             logger.error(f"Failed to fetch project IAM policy for {project_id}: {e}")
             return []
 
-    def get_asset_inventory_resources(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_asset_inventory_resources(self, project_id: str) -> list[dict[str, Any]]:
         """Fetches a point-in-time snapshot of resources via Cloud Asset Inventory."""
         project_id = self._sanitize_string(project_id)
         try:
@@ -166,7 +166,7 @@ class GCPDiscoverer:
             logger.error(f"Failed to search asset inventory resources for {project_id}: {e}")
             return []
 
-    def get_instances(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_instances(self, project_id: str) -> list[dict[str, Any]]:
         """Fetches Compute Engine instances to audit public IP exposure."""
         project_id = self._sanitize_string(project_id)
         try:
@@ -193,7 +193,7 @@ class GCPDiscoverer:
             logger.error(f"Failed to fetch compute instances for {project_id}: {e}")
             return []
 
-    def get_gke_clusters(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_gke_clusters(self, project_id: str) -> list[dict[str, Any]]:
         """Fetches GKE clusters to audit Workload Identity configuration."""
         project_id = self._sanitize_string(project_id)
         try:
@@ -215,7 +215,7 @@ class GCPDiscoverer:
             logger.error(f"Failed to fetch GKE clusters for {project_id}: {e}")
             return []
 
-    def get_subnets(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_subnets(self, project_id: str) -> list[dict[str, Any]]:
         """Fetches VPC subnets to audit Private Google Access properties."""
         project_id = self._sanitize_string(project_id)
         try:
@@ -235,21 +235,23 @@ class GCPDiscoverer:
             logger.error(f"Failed to fetch VPC subnets for {project_id}: {e}")
             return []
 
-    def get_vpc_service_controls(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_vpc_service_controls(self, project_id: str, organization_id: str = "") -> list[dict[str, Any]]:
         """Audits active VPC Service Controls policies."""
         project_id = self._sanitize_string(project_id)
+        org_id = self._sanitize_string(organization_id) if organization_id else ""
+        if not org_id:
+            return []
         try:
-            # Query policies
             out = self._run_cli([
                 "gcloud", "access-context-manager", "policies", "list",
-                f"--project={project_id}", "--format=json"
+                f"--organization={org_id}", "--format=json"
             ])
             return json.loads(out) if out else []
-        except Exception as e:
+        except (RuntimeError, json.JSONDecodeError) as e:
             logger.warning(f"Could not retrieve VPC Service Controls: {e}")
             return []
 
-    def get_scc_findings(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_scc_findings(self, project_id: str) -> list[dict[str, Any]]:
         """Audits Security Command Center findings for vulnerabilities."""
         project_id = self._sanitize_string(project_id)
         try:
@@ -269,21 +271,49 @@ class GCPDiscoverer:
             logger.warning(f"Could not retrieve SCC findings: {e}")
             return []
 
-    def get_resource_locations(self) -> List[Dict[str, Any]]:
+    def get_resource_locations(self, project_id: str = "") -> list[dict[str, Any]]:
         """Checks for active Organization resource location constraints."""
+        project_id = self._sanitize_string(project_id) if project_id else ""
+        cmd = [
+            "gcloud", "resource-manager", "org-policies", "describe",
+            "constraints/gcp.resourceLocations", "--format=json",
+        ]
+        if project_id:
+            cmd.append(f"--project={project_id}")
         try:
-            out = self._run_cli([
-                "gcloud", "resource-manager", "org-policies", "describe",
-                "constraints/gcp.resourceLocations", "--format=json"
-            ])
+            out = self._run_cli(cmd)
             policy = json.loads(out) if out else {}
             return [policy] if policy else []
-        except Exception as e:
+        except (RuntimeError, json.JSONDecodeError) as e:
             logger.warning(f"Could not retrieve Org Policy constraints: {e}")
             return []
 
-    def discover_all(self, project_id: str, parent_id: str = "") -> Dict[str, Any]:
+    def get_probes(self, project_id: str) -> list[dict[str, Any]]:
+        project_id = self._sanitize_string(project_id)
+        try:
+            out = self._run_cli([
+                "gcloud", "run", "services", "list",
+                f"--project={project_id}", "--format=json"
+            ])
+            data = json.loads(out) if out else []
+            probes = []
+            for s in data:
+                labels = s.get("metadata", {}).get("labels", {})
+                if labels.get("nit-fabric-type") == "probe":
+                    probes.append({
+                        "name": s["metadata"]["name"],
+                        "url": s["status"]["url"],
+                        "cloud": "gcp"
+                    })
+            return probes
+        except (RuntimeError, json.JSONDecodeError, KeyError) as e:
+            logger.error(f"Failed to fetch Cloud Run probes for {project_id}: {e}")
+            return []
+
+    def discover_all(self, project_id: str, parent_id: str = "") -> dict[str, Any]:
         """Orchestrates comprehensive GCP sovereignty mapping."""
+        org_id = parent_id.split("/", 1)[1] if parent_id.startswith("organizations/") else ""
+        gcp_subnets = self.get_subnets(project_id)
         return {
             "gcp_shared_vpc": self.get_shared_vpc_topology(project_id),
             "gcp_peerings": self.get_vpc_peerings(project_id),
@@ -293,8 +323,14 @@ class GCPDiscoverer:
             "gcp_assets": self.get_asset_inventory_resources(project_id),
             "gcp_instances": self.get_instances(project_id),
             "gke_clusters": self.get_gke_clusters(project_id),
-            "gcp_subnets": self.get_subnets(project_id),
-            "gcp_vpc_sc": self.get_vpc_service_controls(project_id),
+            "gcp_subnets": gcp_subnets,
+            "gcp_cidrs": [
+                s["ipCidrRange"]
+                for s in gcp_subnets
+                if isinstance(s, dict) and s.get("ipCidrRange")
+            ],
+            "gcp_vpc_sc": self.get_vpc_service_controls(project_id, org_id),
             "gcp_scc_findings": self.get_scc_findings(project_id),
-            "gcp_resource_locations": self.get_resource_locations()
+            "gcp_resource_locations": self.get_resource_locations(project_id),
+            "gcp_probes": self.get_probes(project_id)
         }

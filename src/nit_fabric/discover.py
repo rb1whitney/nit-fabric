@@ -1,10 +1,10 @@
+import argparse
 import json
 import logging
-import sys
-import argparse
 import subprocess
+import sys
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
 
 from nit_fabric.aws_discoverer import AWSDiscoverer
 from nit_fabric.gcp_discoverer import GCPDiscoverer
@@ -25,7 +25,7 @@ class CloudDiscoverer:
         self.gcp_disc = GCPDiscoverer()
         self.governor = SovereigntyGovernor()
 
-    def discover_all(self) -> Dict[str, Any]:
+    def discover_all(self) -> dict[str, Any]:
         context = {}
         if self.mode == "mock":
             logger.info("Running in MOCK mode. Returning synthetic truth-report.")
@@ -57,6 +57,12 @@ class CloudDiscoverer:
             if project_id:
                 gcp_data = self.gcp_disc.discover_all(project_id, parent_id)
                 context.update(gcp_data)
+                if "gcp_cidrs" not in context:
+                    context["gcp_cidrs"] = [
+                        s["ipCidrRange"]
+                        for s in context.get("gcp_subnets", [])
+                        if isinstance(s, dict) and s.get("ipCidrRange")
+                    ]
         
         # Injects Sovereignty Audit & Score into context
         audit_results = self.governor.calculate_score(context)
@@ -64,7 +70,7 @@ class CloudDiscoverer:
         
         return context
 
-    def _run_cli(self, cmd: List[str]) -> str:
+    def _run_cli(self, cmd: list[str]) -> str:
         logger.debug(f"Executing CLI command: {' '.join(cmd)}")
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -78,7 +84,7 @@ class CloudDiscoverer:
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
-    def _get_mock_data(self) -> Dict[str, Any]:
+    def _get_mock_data(self) -> dict[str, Any]:
         return {
             "aws_cidrs": ["10.0.0.0/16", "10.0.1.0/24"],
             "gcp_cidrs": ["10.1.0.0/16", "192.168.1.0/24"],

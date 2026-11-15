@@ -1,4 +1,6 @@
+import os
 import sys
+import unittest
 from unittest.mock import MagicMock
 
 # Mock boto3 and botocore before importing anything else to bypass missing package errors
@@ -7,14 +9,11 @@ sys.modules['boto3'] = boto3_mock
 sys.modules['botocore'] = MagicMock()
 sys.modules['botocore.exceptions'] = MagicMock()
 
-import unittest
-from unittest.mock import patch
-import os
-
 # Adjust path to import nit_fabric modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from nit_fabric.aws_discoverer import AWSDiscoverer
+from nit_fabric.aws_discoverer import AWSDiscoverer  # noqa: E402
+
 
 class TestAWSDiscovery(unittest.TestCase):
     def setUp(self):

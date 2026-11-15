@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-import sys
-import subprocess
 import argparse
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 # Add src to sys.path to allow imports when running directly
@@ -34,6 +35,12 @@ def main():
     # Test command
     subparsers.add_parser("test", help="Execute TDD Coverage Audit")
 
+    # Probe command
+    probe_parser = subparsers.add_parser("probe", help="Run active connectivity probes between clouds")
+    probe_parser.add_argument("--gcp-url", help="GCP Probe URL")
+    probe_parser.add_argument("--aws-url", help="AWS Probe URL")
+    probe_parser.add_argument("--check-port", nargs=3, metavar=("SOURCE", "HOST", "PORT"), help="Check port from source (gcp/aws) to host:port")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -44,10 +51,9 @@ def main():
     if args.command == "scan":
         mode = getattr(args, "mode", "cli")
         checker = PreFlightChecker()
-        if not checker.run_all(mode=mode):
-            if mode != "mock":
-                print("[FATAL] Pre-flight checks failed. Aborting.")
-                sys.exit(1)
+        if not checker.run_all(mode=mode) and mode != "mock":
+            print("[FATAL] Pre-flight checks failed. Aborting.")
+            sys.exit(1)
 
     base_dir = Path(__file__).parent
     project_root = base_dir.parent.parent
@@ -69,13 +75,56 @@ def main():
         
         elif args.command == "remediate":
             cmd = [sys.executable, str(base_dir / "remediator.py"), "--provider", args.provider]
+            if args.validate:
+                cmd.append("--validate")
             if args.explain:
                 cmd.append("--explain")
             subprocess.run(cmd, check=True)
         
         elif args.command == "test":
             print("### nit-fabric regression test suite ###")
-            subprocess.run([sys.executable, str(project_root / "tests" / "test_engine.py")], check=True)
+            subprocess.run([sys.executable, "-m", "pytest", str(project_root / "tests")], check=True)
+        
+        elif args.command == "probe":
+            from nit_fabric.probe_manager import ProbeManager
+            
+            gcp_url = args.gcp_url
+            aws_url = args.aws_url
+            
+            # Try to auto-discover from context.json
+            context_path = project_root / "out" / "context.json"
+            if (not gcp_url or not aws_url) and context_path.exists():
+                with open(context_path) as f:
+                    context = json.load(f)
+                    if not gcp_url:
+                        gcp_probes = context.get("gcp_probes", [])
+                        if gcp_probes:
+                            gcp_url = gcp_probes[0].get("url")
+                            print(f"[*] Auto-discovered GCP Probe: {gcp_url}")
+                    if not aws_url:
+                        aws_probes = context.get("aws_probes", [])
+                        if aws_probes:
+                            aws_url = aws_probes[0].get("url")
+                            print(f"[*] Auto-discovered AWS Probe: {aws_url}")
+
+            manager = ProbeManager(gcp_url=gcp_url, aws_url=aws_url)
+            
+            if args.check_port:
+                source, host, port = args.check_port
+                url = gcp_url if source.lower() == "gcp" else aws_url
+                if not url:
+                    print(f"[ERROR] {source.upper()} URL required for port check")
+                    sys.exit(1)
+                result = manager.check_port(url, host, int(port))
+                print(json.dumps(result, indent=2))
+            else:
+                results = manager.run_tests()
+                print("\n### Probe Results ###")
+                for r in results:
+                    status_col = "\033[92mPASS\033[0m" if r["status"] == "PASS" else "\033[91mFAIL\033[0m"
+                    latency = f" ({r['latency']})" if "latency" in r else ""
+                    error = f" - {r['error']}" if "error" in r else ""
+                    print(f"[{status_col}] {r['test']}{latency}{error}")
     
     except subprocess.CalledProcessError as e:
         print(f"[ERROR] Command failed with exit code {e.returncode}")

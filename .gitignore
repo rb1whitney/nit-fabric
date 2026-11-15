@@ -33,6 +33,12 @@ out/
 credentials.json
 .env
 
+# --- Terraform Caches & State ---
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
 # --- Specific Agent Skill Pycache Exclusions ---
 .agent/skills/__pycache__/
 .agent/skills/ipam-expert/__pycache__/

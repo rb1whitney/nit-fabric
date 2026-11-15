@@ -1,5 +1,6 @@
-from typing import Union
-from nit_fabric.verification.models import FirewallAction, SecurityGroupAction, RouteAction
+
+from nit_fabric.verification.models import FirewallAction, RouteAction, SecurityGroupAction
+
 
 class RemediationGenerator:
     """
@@ -7,7 +8,7 @@ class RemediationGenerator:
     of structured Parameterized Remediation DSL schemas.
     """
     
-    def generate_hcl(self, action: Union[FirewallAction, SecurityGroupAction, RouteAction]) -> str:
+    def generate_hcl(self, action: FirewallAction | SecurityGroupAction | RouteAction) -> str:
         """
         Translates a structured action schema object into syntax-compliant HCL code blocks.
 

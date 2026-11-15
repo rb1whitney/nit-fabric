@@ -1,13 +1,14 @@
-import unittest
-from unittest.mock import patch, MagicMock
 import subprocess
 import sys
+import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Add src to sys.path
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from nit_fabric.preflight import PreFlightChecker
+
 
 class TestPreFlightChecker(unittest.TestCase):
     def setUp(self):

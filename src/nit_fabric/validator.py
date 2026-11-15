@@ -1,9 +1,9 @@
-import subprocess
-import tempfile
 import json
 import logging
+import subprocess
+import tempfile
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Any
 
 logger = logging.getLogger("nit-fabric.validator")
 
@@ -17,7 +17,7 @@ class ValidatorGate:
     def __init__(self) -> None:
         self.rego_policy_path = Path(__file__).parent / "opa_policies" / "remediation_safety.rego"
 
-    def validate_syntax(self, hcl_content: str) -> Tuple[bool, List[str]]:
+    def validate_syntax(self, hcl_content: str) -> tuple[bool, list[str]]:
         """
         Checks the HCL syntax validity of a generated Terraform remediation block.
         Utilizes the Terraform CLI validation pipeline when present, dropping environment-dependent
@@ -45,7 +45,8 @@ class ValidatorGate:
                     ["terraform", "validate", "-json"],
                     cwd=tmpdir,
                     capture_output=True,
-                    text=True
+                    text=True,
+                    check=False,
                 )
                 if res.returncode != 0:
                     try:
@@ -95,7 +96,7 @@ class ValidatorGate:
             lines = hcl_content.splitlines()
             for line_idx, line in enumerate(lines, 1):
                 clean_line = line.strip()
-                if not clean_line or clean_line.startswith("#") or clean_line.startswith("//"):
+                if not clean_line or clean_line.startswith(("#", "//")):
                     continue
                 if "=" in clean_line:
                     val = clean_line.split("=", 1)[1].strip()
@@ -106,7 +107,7 @@ class ValidatorGate:
                 return False, errors
             return True, []
 
-    def evaluate_security(self, data: Dict[str, Any]) -> List[str]:
+    def evaluate_security(self, data: dict[str, Any]) -> list[str]:
         """
         Runs compliance and safety validation audits on the parsed remediation attributes.
         Uses Open Policy Agent (OPA) with policies defined at remediation_safety.rego if CLI is available,
@@ -133,7 +134,8 @@ class ValidatorGate:
                     res = subprocess.run(
                         ["opa", "eval", "-i", tmp_input, "-d", str(self.rego_policy_path), "data.remediation.deny"],
                         capture_output=True,
-                        text=True
+                        text=True,
+                        check=False,
                     )
                     if res.returncode == 0:
                         detail = json.loads(res.stdout)
@@ -154,25 +156,47 @@ class ValidatorGate:
         
         # 2. Robust Python Fallback (OPA Policy Rules Emulator)
         logger.info("OPA CLI not found or Policy missing. Running Python-native Policy Evaluator...")
-        
+
+        rule = data.get("rule") or {}
+        metadata = data.get("metadata") or {}
+
         # Ingress Invariant
-        resource_type = data.get("resource_type", "")
-        cidr_blocks = data.get("cidr_blocks", [])
-        if "security_group" in resource_type:
+        resource_type = data.get("resource_type") or metadata.get("resource_type", "")
+        cidr_blocks = (
+            data.get("cidr_blocks")
+            or metadata.get("cidr_blocks")
+            or data.get("source_ranges")
+            or metadata.get("source_ranges")
+            or rule.get("source_ranges")
+            or ([rule["source_cidr"]] if rule.get("source_cidr") else [])
+        )
+        is_ingress_resource = (
+            "security_group" in resource_type
+            or "firewall" in resource_type
+            or (rule.get("direction", "").upper() == "INGRESS" and rule.get("action", "").upper() == "ALLOW")
+        )
+        if is_ingress_resource:
             for cidr in cidr_blocks:
                 if cidr == "0.0.0.0/0":
                     violations.append("Critical Breach: Unrestricted public ingress (0.0.0.0/0) is prohibited.")
-        
+                    break
+                if cidr == "::/0":
+                    violations.append("Critical Breach: Unrestricted public ingress (::/0) is prohibited.")
+                    break
+
         # IAM Wildcard Invariant
-        actions = data.get("actions", [])
-        effect = data.get("effect", "")
+        actions = data.get("actions") or metadata.get("actions") or []
+        effect = data.get("effect") or metadata.get("effect", "")
+        resources = data.get("resources") or metadata.get("resources") or []
         if "iam" in resource_type or "policy" in resource_type:
-            if effect == "Allow" and "*" in actions:
+            has_wildcard_action = any(a == "*" or str(a).endswith(":*") for a in actions)
+            has_wildcard_resource = "*" in resources
+            if effect == "Allow" and (has_wildcard_action or has_wildcard_resource):
                 violations.append("Least Privilege Violation: Wildcard actions or roles are prohibited.")
-        
+
         # Destruction Invariant
-        action_type = data.get("action_type", "")
+        action_type = data.get("action_type") or metadata.get("action_type", "")
         if action_type == "destroy":
             violations.append("Destruction Violation: Resource destruction of critical assets is prohibited.")
-            
+
         return violations

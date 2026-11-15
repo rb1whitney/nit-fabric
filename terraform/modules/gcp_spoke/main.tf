@@ -49,3 +49,7 @@ resource "google_compute_vpn_gateway" "hub_vpn" {
 variable "subnet_cidr" { type = string }
 variable "region" { type = string }
 variable "asn" { type = number }
+
+output "network_name" {
+  value = google_compute_network.main.name
+}

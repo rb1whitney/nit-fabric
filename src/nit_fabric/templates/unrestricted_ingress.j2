@@ -1,7 +1,17 @@
 ### SECURITY VIOLATION: UNRESTRICTED_INGRESS ###
 Rule {{ rule.rule_id }} allows 0.0.0.0/0 on port {{ rule.port_range }}.
 
-# PROPOSED REMEDIATION: Restrict {{ rule.rule_id }}
+# PROPOSED REMEDIATION:
+# Restrict {{ rule.rule_id }}
 # File: modules/security/main.tf
-- source_ranges = ["0.0.0.0/0"]
-+ source_ranges = ["10.0.0.0/8"] # Internal RFC1918 placeholder
+resource "google_compute_firewall" "restrict_{{ rule.rule_id | replace('-', '_') }}" {
+  name    = "{{ rule.rule_id }}"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["{{ rule.port_range | default('443') }}"]
+  }
+
+  source_ranges = ["10.0.0.0/8"]
+}

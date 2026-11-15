@@ -1,5 +1,7 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
-from typing import List, Optional, Literal
+
 
 class BaseAction(BaseModel):
     """Base class for all verifiable remediation actions."""
@@ -15,10 +17,10 @@ class FirewallAction(BaseAction):
     action: Literal["allow", "deny"]
     direction: Literal["INGRESS", "EGRESS"]
     priority: int = Field(default=1000, ge=0, le=65535)
-    source_ranges: List[str] = Field(default_factory=list)
-    destination_ranges: List[str] = Field(default_factory=list)
-    allowed_protocols: List[str] = Field(default_factory=list)
-    ports: List[str] = Field(default_factory=list)
+    source_ranges: list[str] = Field(default_factory=list)
+    destination_ranges: list[str] = Field(default_factory=list)
+    allowed_protocols: list[str] = Field(default_factory=list)
+    ports: list[str] = Field(default_factory=list)
 
 class RouteAction(BaseAction):
     """Type-safe schema representing an AWS or GCP route table entry."""
@@ -38,4 +40,4 @@ class SecurityGroupAction(BaseAction):
     from_port: int = Field(ge=0, le=65535)
     to_port: int = Field(ge=0, le=65535)
     protocol: Literal["tcp", "udp", "icmp", "-1"]
-    cidr_blocks: List[str] = Field(default_factory=list)
+    cidr_blocks: list[str] = Field(default_factory=list)

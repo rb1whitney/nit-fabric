@@ -10,22 +10,22 @@ resource "aws_security_group" "tgw_boundary" {
   vpc_id      = module.aws_hub.vpc_id
   description = "Baseline Zero-Trust lockdown for the Transit Gateway Hub"
 
-  # INGRESS: Only allow traffic from the GCP Secondary CIDR
+  # INGRESS: Only allow HTTPS transit traffic from the GCP Secondary CIDR
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr_gcp]
-    description = "Allow all traffic from regional GCP peer hub"
+    description = "Allow HTTPS traffic from regional GCP peer hub"
   }
 
   # EGRESS: Standard lockdown logic (Mandatory Default Deny)
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr_gcp]
-    description = "Allow egress only to regional GCP hub"
+    description = "Allow HTTPS egress only to regional GCP hub"
   }
 
   tags = {
@@ -39,11 +39,11 @@ resource "aws_security_group" "tgw_boundary" {
 resource "google_compute_firewall" "hub_boundary" {
   provider = google.secondary
   name     = "nit-fabric-hub-boundary-fw"
-  network  = google_compute_network.secondary.name
+  network  = module.gcp_spoke.network_name
 
   allow {
     protocol = "tcp"
-    ports    = ["0-65535"]
+    ports    = ["443"]
   }
 
   source_ranges = [var.vpc_cidr_aws]

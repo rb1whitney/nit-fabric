@@ -1,11 +1,12 @@
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Adjust path to import nit_fabric modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 from nit_fabric.sovereignty_governor import SovereigntyGovernor
+
 
 class TestSovereigntyGovernor(unittest.TestCase):
     def test_calculate_score_fully_compliant(self):
