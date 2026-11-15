@@ -1,6 +1,6 @@
 import ipaddress
 import logging
-from typing import Tuple, Optional, List, Dict, Any
+from typing import Any
 
 try:
     import z3
@@ -102,7 +102,7 @@ class NetworkSolver:
         finally:
             self.solver.pop()
 
-    def verify_ingress_security(self, rules: List[Dict[str, Any]], protected_cidr: str) -> Tuple[bool, Optional[str]]:
+    def verify_ingress_security(self, rules: list[dict[str, Any]], protected_cidr: str) -> tuple[bool, str | None]:
         """
         Runs SMT reachability checks to verify that no public source IP can access the protected network space.
 
@@ -116,31 +116,52 @@ class NetworkSolver:
                 - bool: True if the network is securely isolated (no public path exists), False if a leak path exists.
                 - Optional[str]: Explanatory string containing the Z3 counter-example IP values if vulnerable.
         """
+        private_cidrs = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10"]
+
         if not HAS_Z3:
             # High-fidelity python emulator for local runners
             protected = ipaddress.ip_network(protected_cidr)
+            private_nets = [ipaddress.ip_network(c) for c in private_cidrs]
             for rule in rules:
-                if rule.get("action") == "allow" and rule.get("direction") == "ingress":
+                if (
+                    str(rule.get("action", "")).lower() == "allow"
+                    and str(rule.get("direction", "ingress")).lower() == "ingress"
+                ):
+                    dst_ranges = rule.get("destination_ranges", ["0.0.0.0/0"])
+                    dst_overlaps = any(
+                        ipaddress.ip_network(d, strict=False).overlaps(protected)
+                        for d in dst_ranges
+                    )
+                    if not dst_overlaps:
+                        continue
                     for range_str in rule.get("source_ranges", []):
-                        if range_str == "0.0.0.0/0":
-                            return False, "Vulnerability Discovered: Public ingress (0.0.0.0/0) allowed to protected space."
+                        src_net = ipaddress.ip_network(range_str, strict=False)
+                        is_fully_private = any(src_net.subnet_of(priv) for priv in private_nets)
+                        if not is_fully_private:
+                            return (
+                                False,
+                                f"Vulnerability Discovered: Public ingress ({range_str}) allowed to protected space.",
+                            )
             return True, None
 
         self.solver.push()
         try:
             # Invariant breach conditions:
-            # 1. Source IP is a public range (not in private 10.0.0.0/8)
-            private_net_expr = self._cidr_to_z3_expr("10.0.0.0/8", self.src_ip)
+            # 1. Source IP is a public range (not in RFC1918 or RFC6598 private spaces)
+            private_net_expr = z3.Or([self._cidr_to_z3_expr(c, self.src_ip) for c in private_cidrs])
             self.solver.add(z3.Not(private_net_expr))
-            
+
             # 2. Destination IP is within the protected subnet
             protected_expr = self._cidr_to_z3_expr(protected_cidr, self.dst_ip)
             self.solver.add(protected_expr)
-            
+
             # 3. Path allowed by rules
             allowed_exprs = []
             for rule in rules:
-                if rule.get("action") == "allow":
+                if (
+                    str(rule.get("action", "")).lower() == "allow"
+                    and str(rule.get("direction", "ingress")).lower() == "ingress"
+                ):
                     src_match = z3.Or([self._cidr_to_z3_expr(r, self.src_ip) for r in rule.get("source_ranges", [])])
                     dst_match = z3.Or([self._cidr_to_z3_expr(r, self.dst_ip) for r in rule.get("destination_ranges", ["0.0.0.0/0"])])
                     allowed_exprs.append(z3.And(src_match, dst_match))

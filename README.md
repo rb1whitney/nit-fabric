@@ -47,21 +47,42 @@ graph TD
 - **Remediation**: Generates type-safe HCL or shell scripts to fix findings.
 - **Advisor Mode**: Explains misconfigurations and manual remediation paths.
 - **Security Checks**: Audits S3 buckets, GKE clusters, and Firewall rules.
+- **Active Connectivity Probes**: Deploys transient functions to GCP (Cloud Run) and AWS (Lambda) to verify bidirectional connectivity and port reachability.
+- **Peering Scaffolding**: Modular HCL for establishing BGP-backed HA-VPN links between AWS and GCP.
 
 ## 3. Quick Start
 
----
+For a detailed walkthrough, see [**docs/LAUNCH_GUIDE.md**](docs/LAUNCH_GUIDE.md).
 
-2. **Run a scan**:
-   ```bash
-   # Make sure you have aws/gcloud credentials configured
-   PYTHONPATH=src python3 src/nit_fabric/main.py scan --mode cli
-   ```
+1.  **Environment Setup**:
+    ```bash
+    python3 -m venv .venv && source .venv/bin/activate
+    pip install -r requirements.txt
+    ```
 
-3. **Generate a fix**:
-   ```bash
-   PYTHONPATH=src python3 src/nit_fabric/main.py remediate --provider terraform
-   ```
+2.  **Run a Discovery Scan**:
+    ```bash
+    # Audits existing VPCs, TGWs, and Peerings
+    PYTHONPATH=src python3 src/nit_fabric/main.py scan --mode cli
+    ```
+
+3.  **Deploy Connectivity Probes**:
+    Deploy the transient test infrastructure in `terraform/modules/gcp_probe` and `terraform/modules/aws_probe`.
+
+4.  **Execute Active Tests**:
+    ```bash
+    # Bidirectional ping & latency check
+    PYTHONPATH=src python3 src/nit_fabric/main.py probe
+
+    # Targeted port reachability check
+    PYTHONPATH=src python3 src/nit_fabric/main.py probe --check-port gcp 10.0.1.5 5432
+    ```
+
+5.  **Generate Peering Remediation**:
+    ```bash
+    # Generate HCL to bridge AWS and GCP
+    PYTHONPATH=src python3 src/nit_fabric/main.py remediate --provider terraform
+    ```
 
 This engine operates in high-security environments where network misconfigurations represent systemic failure risks.
 

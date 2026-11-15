@@ -1,7 +1,6 @@
-import unittest
-import sys
-import os
 import importlib.util
+import os
+import unittest
 
 # Ensure local skills are discoverable
 skills_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agent", "skills"))

@@ -1,5 +1,5 @@
 import subprocess
-import sys
+
 
 class PreFlightChecker:
     """Verifies environment readiness for nit-fabric operations."""
@@ -20,14 +20,13 @@ class PreFlightChecker:
     def check_gcloud(self) -> bool:
         """Verify Google Cloud CLI authentication."""
         try:
-            # Using 'config list' as a lightweight check that doesn't require a full token refresh if not needed
-            subprocess.run(
-                ["gcloud", "auth", "list", "--filter=status:ACTIVE", "--format=value(account)"], 
-                check=True, 
-                capture_output=True, 
-                text=True
+            res = subprocess.run(
+                ["gcloud", "auth", "list", "--filter=status:ACTIVE", "--format=value(account)"],
+                check=True,
+                capture_output=True,
+                text=True,
             )
-            return True
+            return bool(res.stdout.strip())
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 

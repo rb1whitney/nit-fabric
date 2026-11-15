@@ -1,6 +1,21 @@
 ### SECURITY VIOLATION: GCP_EXTERNAL_IP ###
 Instance {{ instance_name }} has an external IP.
 
-# PROPOSED REMEDIATION: Remove external IP from {{ instance_name }}
+# PROPOSED REMEDIATION:
+# Remove external IP from {{ instance_name }}
 # File: modules/compute/gce.tf
-- access_config {} # Removed external IP block
+resource "google_compute_instance" "remediate_{{ instance_name | replace('-', '_') }}" {
+  name         = "{{ instance_name }}"
+  machine_type = "e2-medium"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+    }
+  }
+
+  # External IP removed by omitting access_config block
+  network_interface {
+    network = "default"
+  }
+}

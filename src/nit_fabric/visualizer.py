@@ -1,9 +1,10 @@
+import argparse
 import json
 import logging
+import re
 import sys
-import argparse
 from pathlib import Path
-from typing import Dict, List, Any, Set
+from typing import Any
 
 # --- SRE Configuration: Professional Logging ---
 logging.basicConfig(
@@ -19,17 +20,17 @@ class NetworkVisualizer:
     """
     def __init__(self, context_path: str = "context.json"):
         self.context_path = context_path
-        self.nodes: Set[str] = set()
-        self.edges: List[str] = []
-        self.subgraphs: Dict[str, List[str]] = {"AWS": [], "GCP": []}
+        self.nodes: set[str] = set()
+        self.edges: list[str] = []
+        self.subgraphs: dict[str, list[str]] = {"AWS": [], "GCP": []}
         
         self.context = self._load_context()
 
-    def _load_context(self) -> Dict[str, Any]:
+    def _load_context(self) -> dict[str, Any]:
         if not Path(self.context_path).exists():
             logger.warning(f"Context file {self.context_path} not found. Using empty context.")
             return {}
-        with open(self.context_path, "r") as f:
+        with open(self.context_path) as f:
             return json.load(f)
 
     def _add_node(self, platform: str, name: str, node_type: str = "round") -> str:
@@ -54,14 +55,15 @@ class NetworkVisualizer:
         
         # 1. AWS Resources
         for vpc in self.context.get("vpcs", []):
-            vpc_node = self._add_node("AWS", f"VPC: {vpc.get('id')}")
+            vpc_id = vpc.get("id") or vpc.get("VpcId")
+            vpc_node = self._add_node("AWS", f"VPC: {vpc_id}")
             for ep in vpc.get("endpoints", []):
                 svc_name = ep.get("Service", "Unknown")
                 ep_node = self._add_node("AWS", f"Endpoint: {svc_name}")
                 self.edges.append(f"{vpc_node} -- \"PrivateLink\" --> {ep_node}")
 
         for s3 in self.context.get("aws_s3_buckets", []):
-            s3_node = self._add_node("AWS", s3.get("name"), node_type="database")
+            self._add_node("AWS", s3.get("name"), node_type="database")
 
         # 2. GCP Resources
         for cluster in self.context.get("gke_clusters", []):
@@ -81,7 +83,8 @@ class NetworkVisualizer:
                 lines.append(f"  subgraph {platform}")
                 # We only want nodes that belong to this platform
                 for node in self.nodes:
-                    node_id = node.strip().split("(" if "(" in node else "[")[0]
+                    match = re.match(r"^\s*([^\[\(\s]+)", node)
+                    node_id = match.group(1) if match else ""
                     if node_id in members:
                         lines.append(node)
                 lines.append("  end")

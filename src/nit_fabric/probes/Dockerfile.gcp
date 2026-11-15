@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY gcp_probe.py .
+RUN pip install flask requests gunicorn
+
+ENV PORT 8080
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "gcp_probe:app"]

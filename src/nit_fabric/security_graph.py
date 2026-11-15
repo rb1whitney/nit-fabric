@@ -1,11 +1,12 @@
+import argparse
 import json
 import logging
 import sys
-import argparse
 from pathlib import Path
-from typing import Any, List, Dict
-from schemas import UnifiedSecurityRule, BoundaryViolation
-from policies import PolicyEngine
+
+from nit_fabric.policies import PolicyEngine
+from nit_fabric.schemas import UnifiedSecurityRule
+
 
 # --- SRE Configuration: Structured JSON Logging ---
 class JsonFormatter(logging.Formatter):
@@ -42,7 +43,7 @@ class SecurityScanner:
         }
         if Path(context_path).exists():
             logger.info(f"Loading context from {context_path}")
-            with open(context_path, "r") as f:
+            with open(context_path) as f:
                 self.context.update(json.load(f))
 
     def ingest_rule(self, rule: UnifiedSecurityRule):

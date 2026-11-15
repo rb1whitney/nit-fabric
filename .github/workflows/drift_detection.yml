@@ -12,11 +12,24 @@ permissions:
 jobs:
   drift_audit:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
       - name: Terraform Plan (Drift Detection)
         run: |
-          terraform init
-          terraform plan -detailed-exitcode || if [ $? -eq 2 ]; then echo "DRIFT DETECTED: Truth Decay identified in regional hub."; exit 1; fi
+          terraform init -backend=false
+          set +e
+          terraform plan -detailed-exitcode
+          status=$?
+          set -e
+          if [ "$status" -eq 2 ]; then
+            echo "DRIFT DETECTED: Truth Decay identified in regional hub."
+            exit 1
+          elif [ "$status" -ne 0 ]; then
+            echo "Terraform plan failed with exit code $status."
+            exit "$status"
+          fi

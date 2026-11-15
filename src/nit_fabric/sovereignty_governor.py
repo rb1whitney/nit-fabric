@@ -1,14 +1,14 @@
 import logging
-from typing import Dict, Any, List
+from typing import Any
 
 logger = logging.getLogger("nit-fabric.sovereignty")
 
 class SovereigntyGovernor:
-    def __init__(self, allowed_regions: List[str] = None):
+    def __init__(self, allowed_regions: list[str] | None = None):
         # Default to US/EU regions if not specified
         self.allowed_regions = allowed_regions or ["us-central1", "us-east1", "us-west1", "europe-west1"]
 
-    def calculate_score(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def calculate_score(self, context: dict[str, Any]) -> dict[str, Any]:
         """Calculates a sovereignty score from 0 to 100 with detailed weights."""
         network_score = 100.0
         identity_score = 100.0

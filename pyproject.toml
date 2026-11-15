@@ -9,12 +9,19 @@ description = "Network Infrastructure Topology Fabric"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "boto3",
-    "google-cloud-sdk",
-    "jinja2",
-    "pyyaml",
-    "pydantic",
-    "networkx"
+    "boto3>=1.26.0",
+    "jinja2>=3.1.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0.0",
+    "networkx>=3.0",
+    "requests>=2.28.0",
+    "z3-solver>=4.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.15.0",
 ]
 
 [project.scripts]
@@ -22,3 +29,10 @@ nit-fabric = "nit_fabric.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "SIM", "PIE", "RUF", "LOG", "FURB", "PLW1510", "TRY201"]
