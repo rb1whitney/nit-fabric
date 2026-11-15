@@ -1,3 +1,17 @@
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 4.0"
+    }
+  }
+}
+
 # Note: This is a high-level scaffolding for AWS-GCP VPN Peering.
 # It requires existing AWS Transit Gateway and GCP HA VPN Gateway.
 

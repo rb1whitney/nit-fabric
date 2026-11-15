@@ -1,3 +1,13 @@
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 4.0"
+    }
+  }
+}
+
 resource "google_cloud_run_v2_service" "probe" {
   name     = "nit-fabric-probe"
   location = var.region
